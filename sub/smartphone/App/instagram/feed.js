@@ -1,4 +1,3 @@
-
 (function () {
   'use strict';
   window.NeoIG = window.NeoIG || {};
@@ -11,7 +10,9 @@
 
   const QUICK_EMOJIS = ['❤️', '🙌', '🔥', '👏', '😢', '😍', '😮', '😂'];
 
-  
+  // ==========================================
+  // [1] 피드 게시물 카드 컴포넌트
+  // ==========================================
   function FeedPost({ post, onOpenComments, onOpenLikes, onOpenShare }) {
     const roomData = DATA.getRoomData();
     const myId = roomData.myId || 'user_me';
@@ -60,7 +61,6 @@
         h('button', { type: 'button', className: 'ig-icon-btn' }, h(ICONS.More, { size: 18 }))
       ),
 
-      
       h('div', { className: 'ig-post-media-box' },
         post.image_but_text && post.image_but_text.toLowerCase() !== 'none'
           ? h('div', { className: 'ig-photo-placeholder-box', style: { padding: '20px 14px', textAlign: 'center' } },
@@ -72,7 +72,6 @@
             )
       ),
 
-      
       h('div', { className: 'ig-post-actions-bar' },
         h('div', { className: 'ig-post-actions-left' },
           h('button', {
@@ -86,7 +85,6 @@
         h('button', { type: 'button', className: 'ig-post-action-btn' }, h(ICONS.Bookmark, { size: 23 }))
       ),
 
-      
       h('div', { className: 'ig-post-details' },
         likesCount > 0 && h('span', { className: 'ig-post-likes', onClick: () => onOpenLikes(post) }, `좋아요 ${likesCount}개`),
         h('div', { className: 'ig-post-caption' },
@@ -99,7 +97,9 @@
     );
   }
 
-  
+  // ==========================================
+  // [2] 댓글 및 완벽한 답글 시트 (스레드 계층화)
+  // ==========================================
   function CommentsSheet({ isOpen, post, onClose }) {
     const [commentText, setCommentText] = useState('');
     const [replyParent, setReplyParent] = useState(null);
@@ -108,8 +108,59 @@
 
     const roomData = DATA.getRoomData();
     const myId = roomData.myId || 'user_me';
-    const comments = post.comments || [];
+    const rawComments = post.comments || [];
 
+    // [핵심] 댓글과 답글을 트리 구조로 정렬 (부모 댓글 바로 아래에 답글들이 모이도록)
+    const commentMap = {};
+    rawComments.forEach(c => {
+      if (c.comment_id) commentMap[c.comment_id] = c;
+    });
+
+    const rootComments = [];
+    const replyList = [];
+
+    rawComments.forEach(c => {
+      const isReply = c.parent && c.parent.toLowerCase() !== 'none' && c.parent.trim() !== '';
+      if (isReply) {
+        replyList.push(c);
+      } else {
+        rootComments.push(c);
+      }
+    });
+
+    // 부모 댓글 바로 뒤에 딸린 답글들을 순서대로 배치
+    const threadOrderedComments = [];
+    const processedReplies = new Set();
+
+    rootComments.forEach(root => {
+      threadOrderedComments.push({ ...root, isReply: false, targetUser: null });
+
+      // 이 부모(comment_id 또는 owner)를 가리키는 답글들 수집
+      replyList.forEach(rep => {
+        if (rep.parent === root.comment_id || rep.parent === root.owner) {
+          threadOrderedComments.push({
+            ...rep,
+            isReply: true,
+            targetUser: root.owner
+          });
+          processedReplies.add(rep.comment_id);
+        }
+      });
+    });
+
+    // 부모를 찾지 못한 기타 답글들도 누락 없이 하단에 추가
+    replyList.forEach(rep => {
+      if (!processedReplies.has(rep.comment_id)) {
+        const parentObj = commentMap[rep.parent];
+        threadOrderedComments.push({
+          ...rep,
+          isReply: true,
+          targetUser: parentObj ? parentObj.owner : rep.parent
+        });
+      }
+    });
+
+    // 댓글/답글 전송 핸들러
     const handleSendComment = () => {
       if (!commentText.trim()) return;
       const text = commentText.trim();
@@ -117,7 +168,9 @@
 
       const timeInfo = DATA.getCurrentFormattedTime();
       const newCommentId = 'ct_' + Date.now().toString(36);
-      const parentId = replyParent ? replyParent.comment_id : 'none';
+      
+      // 답글이면 부모의 comment_id 전달, 없으면 'none'
+      const parentId = replyParent ? (replyParent.comment_id || replyParent.owner) : 'none';
 
       const currentData = DATA.getRoomData();
       const targetPost = currentData.posts.find(p => p.post_id === post.post_id);
@@ -156,22 +209,52 @@
         ),
 
         h('div', { className: 'ig-scroll-body', style: { padding: '10px 14px' } },
-          comments.length === 0 && h('div', { style: { textAlign: 'center', padding: '30px 0', color: '#71717a', fontSize: 12 } }, '첫 번째 댓글을 남겨보세요.'),
-          comments.map(c => h('div', { key: c.comment_id, className: 'ig-comment-row' },
-            h('div', { className: 'ig-post-avatar-mini' }, (c.owner || '?').charAt(0)),
-            h('div', { className: 'ig-comment-content' },
-              h('div', { className: 'ig-comment-bubble-meta' },
-                h('span', { className: 'ig-comment-author' }, c.owner),
-                h('span', { className: 'ig-comment-time' }, c.timeStr || '')
-              ),
-              h('div', { className: 'ig-comment-text' }, c.content),
-              h('button', {
-                type: 'button',
-                className: 'ig-comment-reply-btn',
-                onClick: () => setReplyParent(c)
-              }, '답글 달기')
-            )
-          ))
+          threadOrderedComments.length === 0 && h('div', { style: { textAlign: 'center', padding: '30px 0', color: '#71717a', fontSize: 12 } }, '첫 번째 댓글을 남겨보세요.'),
+          
+          threadOrderedComments.map(c => {
+            const isReply = c.isReply;
+
+            return h('div', {
+              key: c.comment_id,
+              className: `ig-comment-row ${isReply ? 'is-reply' : ''}`,
+              style: isReply ? {
+                marginLeft: 38,
+                paddingLeft: 8,
+                borderLeft: '1.5px solid rgba(255, 255, 255, 0.12)',
+                marginBottom: 10
+              } : {
+                marginBottom: 14
+              }
+            },
+              // 아바타 (답글은 24px 크기, 일반 댓글은 30px 크기)
+              h('div', {
+                className: 'ig-post-avatar-mini',
+                style: isReply ? { width: 24, height: 24, fontSize: 11, background: '#27272a' } : {}
+              }, (c.owner || '?').charAt(0)),
+
+              h('div', { className: 'ig-comment-content' },
+                h('div', { className: 'ig-comment-bubble-meta' },
+                  isReply && h('span', { style: { color: '#f97316', fontWeight: 800, fontSize: 11, marginRight: 2 } }, '↳'),
+                  h('span', { className: 'ig-comment-author' }, c.owner),
+                  h('span', { className: 'ig-comment-time' }, c.timeStr || '')
+                ),
+
+                // 댓글 본문 (답글일 경우 @상대방 멘션 파란색 태그 렌더링)
+                h('div', { className: 'ig-comment-text', style: { fontSize: isReply ? 12 : 12.5 } },
+                  isReply && c.targetUser && h('span', {
+                    style: { color: '#0095f6', fontWeight: 600, marginRight: 5, userSelect: 'none' }
+                  }, `@${c.targetUser}`),
+                  c.content
+                ),
+
+                h('button', {
+                  type: 'button',
+                  className: 'ig-comment-reply-btn',
+                  onClick: () => setReplyParent(c)
+                }, '답글 달기')
+              )
+            );
+          })
         ),
 
         h('div', { className: 'ig-emoji-quick-bar' },
@@ -181,11 +264,13 @@
           }, em))
         ),
 
+        // 답글 작성 중 알림 배너
         replyParent && h('div', { className: 'ig-replying-banner' },
           h('span', null, `${replyParent.owner}님에게 답글 남기는 중`),
           h('button', { type: 'button', className: 'ig-icon-btn', onClick: () => setReplyParent(null) }, h(ICONS.Close, { size: 16 }))
         ),
 
+        // 하단 댓글 입력창
         h('div', { className: 'ig-comment-input-bar' },
           h('div', { className: 'ig-post-avatar-mini' }, myId.charAt(0)),
           h('div', { className: 'ig-comment-input-capsule' },
@@ -203,7 +288,9 @@
     );
   }
 
-  
+  // ==========================================
+  // [3] 좋아요 시트
+  // ==========================================
   function LikesSheet({ isOpen, post, onClose }) {
     if (!isOpen || !post) return null;
     const likes = post.likes || [];
@@ -230,7 +317,9 @@
     );
   }
 
-  
+  // ==========================================
+  // [4] 홈 피드 메인 뷰
+  // ==========================================
   function HomeView({ onOpenDM }) {
     const [commentsPost, setCommentsPost] = useState(null);
     const [likesPost, setLikesPost] = useState(null);

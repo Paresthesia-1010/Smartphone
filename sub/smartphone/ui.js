@@ -14,7 +14,8 @@
 
     const extId = document.querySelector('meta[name="extension-id"]')?.content;
     if (extId) {
-      return `chrome-extension:    }
+      return `chrome-extension://${extId}/sub/smartphone/${fileName}`;
+    }
 
     return `sub/smartphone/${fileName}`;
   }

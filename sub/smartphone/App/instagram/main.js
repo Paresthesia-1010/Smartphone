@@ -9,10 +9,10 @@
       return;
     }
     const s1 = document.createElement('script');
-    s1.src = 'https:
+    s1.src = 'https://unpkg.com/react@18/umd/react.production.min.js';
     s1.onload = () => {
       const s2 = document.createElement('script');
-      s2.src = 'https:
+      s2.src = 'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js';
       s2.onload = callback;
       document.head.appendChild(s2);
     };

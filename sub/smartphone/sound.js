@@ -41,7 +41,7 @@
 
     const extId = document.querySelector('meta[name="extension-id"]')?.content;
     if (extId) {
-      paths.forEach(p => urls.push(`chrome-extension:
+      paths.forEach(p => urls.push(`chrome-extension://${extId}/${p}`));
     }
 
     paths.forEach(p => urls.push(p));

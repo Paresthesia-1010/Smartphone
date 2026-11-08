@@ -7,8 +7,12 @@
     "storage"
   ],
   "host_permissions": [
-    "https://aistudio.google.com/*"
+    "https://aistudio.google.com/*",
+    "*://*.youtube.com/*"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": [
@@ -39,7 +43,12 @@
         "sub/smartphone/App/instagram/dm.js",
         "sub/smartphone/App/instagram/explore.js",
         "sub/smartphone/App/instagram/profile.js",
-        "sub/smartphone/App/instagram/main.js"
+        "sub/smartphone/App/instagram/main.js",
+        "sub/smartphone/App/clean.js",
+       
+        "sub/bgm/play.js",
+        "sub/api/youtube.js",
+        "sub/smartphone/App/toss.js"
       ],
       "run_at": "document_end"
     }

@@ -1,6 +1,6 @@
 
 const NEO_CSS = `
-@import url('https:
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
 ms-callout,
 ms-paid-api-key-callout,
@@ -16,6 +16,7 @@ ms-omnibar,
 ms-drive-permission-nudge,
 .token-container,
 ms-navbar-promo-card,
+.toggles-container,
 .toggles-container,
 ms-playground-toolbar ms-header {
   display: none !important;
@@ -500,7 +501,8 @@ const INITIAL_PERSONAS = [
 let personaList = JSON.parse(localStorage.getItem('neo_persona_list') || JSON.stringify(INITIAL_PERSONAS));
 let activePersonaId = localStorage.getItem('neo_active_persona_id') || 'p_1';
 let chatNotesMap = JSON.parse(localStorage.getItem('neo_chat_notes_map') || '{}');
-let toggleSettings = JSON.parse(localStorage.getItem('neo_toggle_settings') || '{"impersonation": true, "awkward": true, "search": false}');
+let toggleSettings = JSON.parse(localStorage.getItem('neo_toggle_settings') || '{"impersonation": true, "awkward": true}');
+let isBgBEnabled = localStorage.getItem('BG_B') === 'true'; // boolean으로 로드
 let chatBasePromptMap = JSON.parse(localStorage.getItem('neo_chat_base_prompts') || '{}');
 
 function saveToggleSettings() {
@@ -715,10 +717,11 @@ function injectRadixModal() {
   triggerBtn.id = 'neo-settings-trigger';
   triggerBtn.title = '출력 및 모델 설정';
   triggerBtn.innerHTML = `
-    <svg xmlns="http:      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
       <circle cx="12" cy="12" r="3"/>
     </svg>
-  `;
+  `;    
   document.body.appendChild(triggerBtn);
 
   const modelItemsHtml = GEMINI_MODELS.map(m => `
@@ -767,12 +770,13 @@ function injectRadixModal() {
               </div>
               <p class="toggle-desc">모델이 사용자의 대사 및 독백을 출력하지 못하도록 최상단에 제한합니다.</p>
             </div>
+            <!-- BGM, 배경화면 토글 (기존 검색 채팅 대체) -->
             <div class="toggle-item">
               <div class="toggle-header">
-                <span>검색 채팅</span>
-                <div class="custom-switch ${toggleSettings.search ? 'on' : ''}" id="switch-search"></div>
+                <span>BGM, 배경화면</span>
+                <div class="custom-switch ${isBgBEnabled ? 'on' : ''}" id="switch-bgb"></div>
               </div>
-              <p class="toggle-desc">실시간 웹 검색을 활용하는 실험용 기능입니다.</p>
+              <p class="toggle-desc">BGM 및 배경화면 기능을 활성화하거나 해제합니다.</p>
             </div>
             <div class="toggle-item">
               <div class="toggle-header">
@@ -898,10 +902,16 @@ function injectRadixModal() {
     showNeoToast(`✓ 어색한 출력 교정이 ${toggleSettings.awkward ? '활성화' : '해제'}되었습니다.`);
   });
 
-  document.getElementById('switch-search')?.addEventListener('click', (e) => {
-    toggleSettings.search = !toggleSettings.search;
-    e.currentTarget.classList.toggle('on', toggleSettings.search);
-    saveToggleSettings();
+  // 기존 switch-search 이벤트 리스너를 제거하고 아래 코드로 교체
+  document.getElementById('switch-bgb')?.addEventListener('click', (e) => {
+    isBgBEnabled = !isBgBEnabled;
+    localStorage.setItem('BG_B', JSON.stringify(isBgBEnabled)); // bool(true/false) 방식으로 저장
+    e.currentTarget.classList.toggle('on', isBgBEnabled);
+    
+    // (선택 사항) 다른 스크립트에서 실시간 감지할 수 있도록 커스텀 이벤트 발송
+    window.dispatchEvent(new CustomEvent('neo-bgb-updated', { detail: { enabled: isBgBEnabled } }));
+    
+    showNeoToast(`✓ BGM/배경화면 기능이 ${isBgBEnabled ? '활성화' : '해제'}되었습니다.`);
   });
 
   
@@ -1138,7 +1148,8 @@ function polishMessages() {
     toggleBtn.type = 'button';
     toggleBtn.title = '사고 과정 확인';
     toggleBtn.innerHTML = `
-      <svg class="gemini-official-icon" viewBox="0 0 28 28" fill="none" xmlns="http:        <path d="M14 28C14 20.268 7.732 14 0 14C7.732 14 14 7.732 14 0C14 7.732 20.268 14 28 14C20.268 14 14 20.268 14 28Z" fill="url(#gemini-mono-gradient)"/>
+      <svg class="gemini-official-icon" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 28C14 20.268 7.732 14 0 14C7.732 14 14 7.732 14 0C14 7.732 20.268 14 28 14C20.268 14 14 20.268 14 28Z" fill="url(#gemini-mono-gradient)"/>
         <defs>
           <linearGradient id="gemini-mono-gradient" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
             <stop offset="0%" stop-color="#ffffff"/>
