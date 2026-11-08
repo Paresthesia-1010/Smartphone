@@ -1,0 +1,60 @@
+{
+  "manifest_version": 3,
+  "name": "neo",
+  "version": "1.0.0",
+  "description": "",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://aistudio.google.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://aistudio.google.com/*"
+      ],
+      "js": [
+        "sub/clean.js",
+        "sub/modify.js",
+        "sub/news.js",
+        "sub/tool.js",
+        "content.js",
+        
+        "sub/smartphone/App/design.js",
+        "sub/smartphone/sound.js",
+        "sub/smartphone/system.js",
+        "sub/smartphone/system/action-queue.js",
+        "sub/smartphone/ui.js",
+        
+        "sub/smartphone/App/kakaotalk.js",
+        "sub/smartphone/App/message.js",
+
+        "sub/smartphone/vendor/react.production.min.js",
+        "sub/smartphone/vendor/react-dom.production.min.js",
+
+        "sub/smartphone/App/instagram/icons.js",
+        "sub/smartphone/App/instagram/data.js",
+        "sub/smartphone/App/instagram/feed.js",
+        "sub/smartphone/App/instagram/dm.js",
+        "sub/smartphone/App/instagram/explore.js",
+        "sub/smartphone/App/instagram/profile.js",
+        "sub/smartphone/App/instagram/main.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "sub/smartphone/*.png",
+        "sub/smartphone/sounds/iphone/*.mp3",
+        "sub/smartphone/sounds/*.mp3",
+        "sounds/iphone/*.mp3"
+      ],
+      "matches": [
+        "https://aistudio.google.com/*"
+      ]
+    }
+  ]
+}
